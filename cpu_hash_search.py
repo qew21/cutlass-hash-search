@@ -1,6 +1,3 @@
-import triton
-import triton.language as tl
-import torch
 import time
 import random
 import numpy as np
@@ -17,88 +14,6 @@ def custom_hash_cpu(val: int) -> int:
         val = val ^ (val >> np.uint32(15))
     return int(val)
 
-@triton.jit
-def custom_hash_gpu(val: tl.uint32) -> tl.uint32:
-    """GPU优化的哈希函数 (Triton版本)"""
-    hash_val = val
-    for _ in range(15):  # 保持与原始实现相同的迭代次数
-        hash_val = (hash_val ^ 61) ^ (hash_val >> 16)
-        hash_val = hash_val + (hash_val << 3)
-        hash_val = hash_val ^ (hash_val >> 4)
-        hash_val = hash_val * 0x27d4eb2d  # FNV-1a prime
-        hash_val = hash_val ^ (hash_val >> 15)
-    return hash_val
-
-# --- 高度优化的Triton搜索内核 ---
-@triton.autotune(
-    configs=[
-        triton.Config({'BLOCK_SIZE': 256}, num_warps=4),
-        triton.Config({'BLOCK_SIZE': 512}, num_warps=8),
-        triton.Config({'BLOCK_SIZE': 1024}, num_warps=16),
-        triton.Config({'BLOCK_SIZE': 2048}, num_warps=32),
-    ],
-    key=['SEARCH_SPACE'],
-)
-@triton.jit
-def gpu_brute_force_kernel(
-    target_hash: tl.uint32,
-    max_val: tl.uint32,
-    result_ptr: tl.tensor,
-    found_flag_ptr: tl.tensor,
-    start_idx: tl.uint32,
-    BLOCK_SIZE: tl.constexpr,
-    SEARCH_SPACE: tl.constexpr,
-):
-    """优化的暴力搜索内核"""
-    # 计算全局索引
-    pid = tl.program_id(0)
-    idx = start_idx + pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
-    
-    # 边界检查
-    in_bounds = (idx <= max_val)
-    
-    # 计算哈希值
-    hash_vals = custom_hash_gpu(idx)
-    
-    # 检查匹配 - 替代tl.any()的实现
-    matches = tl.where(in_bounds & (hash_vals == target_hash), idx, 0xFFFFFFFF)
-    min_match = tl.min(matches, 0)
-    
-    # 如果找到匹配
-    if min_match != 0xFFFFFFFF:
-        # 原子操作确保只有一个线程写入结果
-        if tl.atomic_cas(found_flag_ptr, 0, 1) == 0:
-            tl.store(result_ptr, min_match)
-
-# --- 包装函数用于启动Triton搜索 ---
-def triton_brute_force(target_hash: int, max_val: int, start_idx: int = 0):
-    """GPU加速的暴力搜索函数"""
-    # 初始化GPU存储
-    result = torch.full((1,), 0xFFFFFFFF, dtype=torch.uint32, device='cuda')
-    found_flag = torch.zeros(1, dtype=torch.int32, device='cuda')
-    
-    # 计算搜索空间大小
-    search_space = max_val - start_idx + 1
-    
-    # 定义网格函数
-    def grid_fn(meta):
-        blocks_needed = (search_space + meta['BLOCK_SIZE'] - 1) // meta['BLOCK_SIZE']
-        return (min(blocks_needed, 65535 * 128),)  # 限制最大块数
-    
-    # 启动内核
-    gpu_brute_force_kernel[grid_fn](
-        target_hash,
-        max_val,
-        result,
-        found_flag,
-        start_idx,
-        # BLOCK_SIZE=None,
-        SEARCH_SPACE=search_space,
-    )
-    
-    # 返回结果
-    found = result.item()
-    return found if found != 0xFFFFFFFF else -1
 
 # --- CPU参考实现 ---
 def cpu_brute_force(target_hash: int, max_val: int) -> int:
