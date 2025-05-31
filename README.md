@@ -104,7 +104,7 @@ python cpu_hash_search.py
 
 You can use this project to compare execution times across different implementations (CUTLASS, Triton, PyCUDA, CPU). This is useful for benchmarking and understanding performance trade-offs on various hardware setups.
 
-| Implementation   | Language | Time（ms） |
+| Implementation   | Language | Time (ms) |
 | ---------------- | -------- | -------- |
 | CPU              | Python   | 10471763 |
 | CPU              | C++      | 24482    |
