@@ -13,19 +13,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: "🕵️ Inspect GITHUB_TOKEN permissions"
+      - name: 🕵️ Inspect token permissions via Repo API
         uses: actions/github-script@v7
         with:
           script: |
-            console.log("Inspecting token permissions...");
-            const response = await github.request("/"); // 调用一个最基础的API端点
-            const scopes = response.headers['x-oauth-scopes'];
-            console.log("Token Scopes:", scopes);
-            if (!scopes || !scopes.includes("pull_requests:write")) {
-              core.setFailed("❌ Critical: The token does not have 'pull-requests:write' permission. Scopes found: " + scopes);
-            } else {
-              console.log("✅ The token has the required 'pull-requests:write' permission.");
-            }
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            // 拿到这个仓库信息，其中会有 `permissions` 字段
+            const { data } = await github.rest.repos.get({ owner, repo });
+            console.log("Installation permissions on this repo:", data.permissions);
+
       - name: Checkout 代码
         uses: actions/checkout@v3
         with:
