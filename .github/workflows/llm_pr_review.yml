@@ -14,16 +14,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🕵️ Inspect token permissions via Repo API
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const owner = context.repo.owner;
-            const repo  = context.repo.repo;
-            // 拿到这个仓库信息，其中会有 `permissions` 字段
-            const { data } = await github.rest.repos.get({ owner, repo });
-            console.log("Installation permissions on this repo:", data.permissions);
-
       - name: Checkout 代码
         uses: actions/checkout@v3
         with:
