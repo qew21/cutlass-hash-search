@@ -88,16 +88,6 @@ if __name__ == "__main__":
     # 测试配置（请根据显存/时间酌情调整 max_val_to_check）
     SOURCE_TO_FIND     = 142385552
     MAX_VALUE_TO_CHECK = 2_000_000_000  # 2e8 以内测试即可
-    # 先在 CPU 上算出目标 hash
-    # def custom_hash_python(val):
-    #     h = val & 0xFFFFFFFF
-    #     for _ in range(15):
-    #         h = (h ^ 61) ^ (h >> 16)
-    #         h = h + (h << 3)
-    #         h = h ^ (h >> 4)
-    #         h = h * 0x27d4eb2d
-    #         h = (h ^ (h >> 15)) & 0xFFFFFFFF
-    #     return h
 
     def custom_hash_python(val: int) -> int:
         h = val & 0xFFFFFFFF
