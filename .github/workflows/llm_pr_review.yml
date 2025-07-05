@@ -1,0 +1,41 @@
+name: LLM PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  llm_review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 代码
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0        # 需要完整历史以获取 diff
+
+      - name: 设置 Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install openai requests
+
+      - name: 运行 PR Review 脚本
+        env:
+          # OpenAI 配置，从 Secrets 中读取
+          OPENAI_API_KEY:   ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_BASE:  ${{ secrets.OPENAI_API_BASE }}
+          OPENAI_MODEL:  ${{ secrets.OPENAI_MODEL }}
+          # GitHub 运行时自动提供
+          GITHUB_TOKEN:     ${{ secrets.GITHUB_TOKEN }}
+          # 传递给脚本的参数
+          GITHUB_REPOSITORY:             ${{ github.repository }}
+          GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_BASE_REF:               ${{ github.event.pull_request.base.ref }}
+          GITHUB_SHA:                    ${{ github.sha }}
+        run: |
+          python scripts/pr_review.py
