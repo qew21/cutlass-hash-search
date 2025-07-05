@@ -40,7 +40,7 @@ def main():
     feedback = resp.choices[0].message.content.strip()
 
     # --- 发布到 GitHub PR Comment ---
-    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+    url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
     headers = {
         "Authorization": f"token {os.getenv('GITHUB_TOKEN')}",
         "Content-Type": "application/json"

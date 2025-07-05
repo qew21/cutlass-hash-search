@@ -3,6 +3,7 @@ name: LLM PR Review
 permissions:
   contents: read    # 默认就有，保留
   pull-requests: write     # 允许给 PR 贴 comment
+  issues: write 
 
 on:
   pull_request:
