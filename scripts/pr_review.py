@@ -3,7 +3,7 @@
 
 import os
 import subprocess
-import openai
+from openai import OpenAI
 import requests
 
 def main():
@@ -22,20 +22,20 @@ def main():
     )
 
     # --- 配置 OpenAI API ---
-    openai.api_key  = os.getenv("OPENAI_API_KEY")
-    openai.api_base = os.getenv("OPENAI_API_BASE")
+    api_key  = os.getenv("OPENAI_API_KEY")
+    api_base = os.getenv("OPENAI_API_BASE")
     model = os.getenv("OPENAI_MODEL")
-
+    client = OpenAI(api_key=api_key, base_url=api_base)
+    
     # --- 组织 Prompt 并调用 LLM ---
     prompt = (
         "请针对以下 Pull Request 的 diff 提出代码质量、可读性、潜在 Bug 等反馈和优化建议：\n\n"
         "```diff\n" + diff + "\n```"
     )
-    resp = openai.ChatCompletion.create(
-        model=model,          # 可根据需要替换为其他模型
+    resp = client.chat.completions.create(
+        model=model,    
         messages=[{"role":"user", "content": prompt}],
-        max_tokens=4096,
-        temperature=0.5
+        stream=False,
     )
     feedback = resp.choices[0].message.content.strip()
 
