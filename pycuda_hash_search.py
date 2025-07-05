@@ -86,8 +86,8 @@ def pycuda_bruteforce(target_hash, max_val_to_check, threads_per_block=256):
 
 if __name__ == "__main__":
     # 测试配置（请根据显存/时间酌情调整 max_val_to_check）
-    SOURCE_TO_FIND     = 142385552
     MAX_VALUE_TO_CHECK = 2_000_000_000  # 2e8 以内测试即可
+    SOURCE_TO_FIND     = 142385552
 
     def custom_hash_python(val: int) -> int:
         h = val & 0xFFFFFFFF
